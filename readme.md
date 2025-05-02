@@ -1,27 +1,25 @@
-This is my first working(ish) attempt at making and deploygin a balancing policy for the 23DOF G1.
+This is my first working pass of a standalone repo to train and deploy a basic locomotion policy for the 23dof Unitree G1. 
+
+It is adapted from the G1 29dof code distributed throughout the [Mujoco Playground repo](https://github.com/google-deepmind/mujoco_playground) along with the deployment code from the [Unitree RL repo](https://github.com/unitreerobotics/unitree_rl_gym). 
+
+Note: The policy is quite jank (i.e. the robot stumbles drunkenly around), but it's a full train-test-deploy loop and the robot actually balances and moves around IRL!
+
 
 ![policy output](output.gif)
 
-It borrows heavily from the different unitree repos and mujoco playground examples.
-*If you make any improvements or create a separate balance policy, please let me know - I want to learn!*
-
-### Qualifiers
-* It's brittle and jank but it kind of works (i think?), so I thought I'd put it as a standalone repo on github in case this helps out someone else.
-* I didn't cleanup/comment/organize the code at all. It's pretty small but might be difficult to follow, - you are absolutely welcome to ask me questions via email/twitter.
-* This code is copy/pasted from the [main repo I was derping around in](https://github.com/jloganolson/g1_mjx_helloworld) and I didn't test it thoroughly - if you run into issues, again, you're totally welcome to ping me.
-
-
 
 ### Instructions
+IMPORTANT: For this to work, be sure to use the old 4.3.8 version of jax as mentioned in this Mujoco Playground issue: (https://github.com/google-deepmind/mujoco_playground/issues/112)
+
 Setup/pip install the following repos 
 (https://github.com/unitreerobotics/unitree_sdk2_python)
 (https://github.com/google-deepmind/mujoco_playground)
 (https://github.com/google/brax)
 
-(note: doing this from memory so there may be more...)
-
-From inside the script folder, run `python main.py` to train a policy
-To deploy that policy run `python deploy_real.py` -- be sure to replace `CHECKPOINT_PATH` with your own and have an environment variable for `NETWORK_CARD_NAME` (per their docs)
+To train, run `python training/main.py` 
+To convert pkl to onnx, update the ckpt_path and run all the cells in `training/brax_network_to_onnx.ipynb`
+To test using sim2sim with mujoco, run `python deploy/deploy_sim.py` with updated ONNX_PATH string
+To deploy irl, setup your G1 and run `python deploy/deploy_real.py` with updated ONNX_PATH and NETWORK_CARD_NAME strings
 
 
 

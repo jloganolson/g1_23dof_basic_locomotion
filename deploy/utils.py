@@ -27,12 +27,9 @@ default_pos = [
     0.2, -0.2, 0, 1.28, 0, 
 ]
 
-dof_pos_scale = 1.0
-dof_vel_scale = 1.0
+
 action_scale = 0.5
 ang_vel_scale = 1.0
-mask_arms = True
-
 
 
 class G1MjxJointIndex:

@@ -211,6 +211,7 @@
           <geom pos="0.0039635 0 -0.044" class="visual" mesh="torso_link_23dof_rev_1_0"/>
           <geom pos="0.0039635 0 -0.044" quat="1 0 0 0" class="visual" material="black" mesh="logo_link"/>
           <geom pos="0.0039635 0 -0.044" class="visual" material="black" mesh="head_link"/>
+          <site name="imu_in_torso" size="0.01" pos="-0.03959 -0.00224 0.14792"/>
           <body name="left_shoulder_pitch_link" pos="0.0039563 0.10022 0.24778"
             quat="0.990264 0.139201 1.38722e-05 -9.86868e-05">
             <inertial pos="0 0.035892 -0.011628" quat="0.654152 0.0130458 -0.326267 0.68225" mass="0.718"
@@ -329,12 +330,20 @@
     <accelerometer name="accelerometer_pelvis" site="imu_in_pelvis" noise="1e-2" cutoff="157"/>
     <velocimeter site="imu_in_pelvis" name="local_linvel_pelvis"/>
     <frameangvel objtype="site" objname="imu_in_pelvis" name="global_angvel_pelvis"/>
-    <framelinvel objtype="site" objname="imu_in_pelvis" name="global_linvel_pelvis"/>
-
-    
+    <framelinvel objtype="site" objname="imu_in_pelvis" name="global_linvel_pelvis"/>    
     <framezaxis objtype="site" objname="imu_in_pelvis" name="upvector_pelvis"/>
     <framexaxis objtype="site" objname="imu_in_pelvis" name="forwardvector_pelvis"/>
     <framequat objtype="site" objname="imu_in_pelvis" name="orientation_pelvis"/>
+    
+    <accelerometer site="imu_in_torso" name="accelerometer_torso"/>
+    <gyro site="imu_in_torso" name="gyro_torso"/>
+    <framexaxis objtype="site" objname="imu_in_torso" name="forwardvector_torso"/>
+    <framequat objtype="site" objname="imu_in_torso" name="orientation_torso"/>
+    <framelinvel objtype="site" objname="imu_in_torso" name="global_linvel_torso"/>
+    <frameangvel objtype="site" objname="imu_in_torso" name="global_angvel_torso"/>
+
+        <framezaxis objtype="site" objname="imu_in_torso" name="upvector_torso"/>
+    <velocimeter site="imu_in_torso" name="local_linvel_torso"/>
     
     <framelinvel objtype="site" objname="left_foot" name="left_foot_global_linvel"/>
     <framelinvel objtype="site" objname="right_foot" name="right_foot_global_linvel"/>

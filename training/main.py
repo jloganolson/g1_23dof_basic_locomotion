@@ -28,6 +28,7 @@ from orbax import checkpoint as ocp
 from mujoco_playground import wrapper
 from ml_collections import config_dict
 import json
+from utils import get_ppo_params
 
 # jax.config.update("jax_compilation_cache_dir", "/tmp/jax_cache")
 # jax.config.update("jax_persistent_cache_min_entry_size_bytes", -1)
@@ -66,31 +67,7 @@ def train_run(config=None, use_wandb=False):
     exp_name = f"{env_name}-{run_name}"
 
     print(f"Checkpoint path: {ckpt_path}")
-    ppo_params = config_dict.create(
-        num_timesteps=200_000_000,
-        num_evals=20,
-        reward_scaling=1.0,
-        episode_length=env_cfg.episode_length,
-        normalize_observations=True,
-        action_repeat=1,
-        clipping_epsilon = 0.2,
-        num_resets_per_eval = 1,
-        unroll_length=20,
-        num_minibatches=32,
-        num_updates_per_batch=4,
-        discounting=0.97,
-        learning_rate=3e-4,
-        entropy_cost= 0.005,
-        num_envs=8192,
-        batch_size=256,
-        max_grad_norm=1.0,
-        network_factory=config_dict.create(
-            policy_hidden_layer_sizes=(512, 256, 128),
-            value_hidden_layer_sizes=(512, 256, 128),
-            policy_obs_key="state",
-            value_obs_key="privileged_state",
-        ),
-    )
+    ppo_params = get_ppo_params(env_cfg)
 
     # Log the actual PPO params being used if wandb is active
     if use_wandb and run:

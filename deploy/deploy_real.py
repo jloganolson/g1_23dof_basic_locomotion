@@ -1,5 +1,5 @@
-import jax
-from utils_real import (
+
+from utils import (
     init_cmd_hg,
     create_damping_cmd,
     create_zero_cmd,
@@ -11,12 +11,7 @@ from utils_real import (
     G1_NUM_MOTOR,
     default_pos,
     get_gravity_orientation,
-    dof_pos_scale,
-    dof_vel_scale,
     action_scale,
-    ang_vel_scale,
-    mask_arms,
-    G1MjxJointIndex,
     RESTRICTED_JOINT_RANGE,
 )
 from unitree_sdk2py.utils.thread import RecurrentThread
@@ -28,25 +23,13 @@ from unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowCmd_
 from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelFactoryInitialize
 import time
-from dotenv import load_dotenv
-
-
 import numpy as np
-load_dotenv()
-NETWORK_CARD_NAME = 'enxc8a362b43bfd'
-# mask_arms = True
-# num_obs = 72
-
-# from brax.training.agents.ppo import checkpoint as ppo_checkpoint
-# import jax
-# import jax.random  # Add global import for jax.random
-# from pathlib import Path
 import onnxruntime as rt
-
 from keyboard_reader import KeyboardController
-
 import time
 
+NETWORK_CARD_NAME = 'enxc8a362b43bfd'
+ONNX_PATH = "deploy/bh_policy.onnx"
 
 class OnnxPolicy:
   """ONNX controller for the Go-1 robot."""
@@ -67,17 +50,13 @@ class OnnxPolicy:
     onnx_pred = self._policy.run(self._output_names, onnx_input)[0][0]
 
     # Zero out arm control similar to training logic
-    ZERO_ARM_CONTROL = True  # Set this flag as needed
-    if ZERO_ARM_CONTROL:
-        # Assuming arm indices are the last 10 (indices 13 to 22)
-        # Order: L leg (6), R leg (6), Waist (1), L arm (5), R arm (5) -> Total 23
-        arm_indices = slice(13, 23)  # Indices 13, 14, ..., 22
+    # Assuming arm indices are the last 10 (indices 13 to 22)
+    # Order: L leg (6), R leg (6), Waist (1), L arm (5), R arm (5) -> Total 23
+    arm_indices = slice(13, 23)  # Indices 13, 14, ..., 22
     onnx_pred[arm_indices] = 0.0
     return onnx_pred
 
 
-
- 
 
 class Controller:
 
@@ -85,15 +64,9 @@ class Controller:
     def __init__(self, policy: OnnxPolicy) -> None:
         self.policy = policy
 
-        # Initialize the policy network
-        # self.policy = torch.jit.load(config.policy_path)
-        # # Initializing process variables
         self.qj = np.zeros(G1_NUM_MOTOR, dtype=np.float32)
         self.dqj = np.zeros(G1_NUM_MOTOR, dtype=np.float32)
         self.action = np.zeros(G1_NUM_MOTOR, dtype=np.float32)
-        # self.target_dof_pos = config.default_angles.copy()
-        # self.obs = np.zeros(num_obs, dtype=np.float32)
-        # self.cmd = np.array([0.0, 0, 0])
         self.counter = 0
 
         # Convert joint range tuples to numpy arrays for efficient clamping
@@ -106,7 +79,6 @@ class Controller:
             vel_scale_y=1.0,
             vel_scale_rot=1.0,
         )
-        # print("Hello")
 
         self.control_dt = 0.02
         self._phase = np.array([0.0, np.pi])
@@ -130,11 +102,6 @@ class Controller:
 
         # Initialize the command msg
         init_cmd_hg(self.low_cmd, self.mode_machine_, self.mode_pr_)
-
-    # def setup_policy(self):
-    #     relative_path = Path("./checkpoints/g1_balance-happy-mountain-1/000408944640")
-    #     policy_fn = ppo_checkpoint.load_policy(relative_path.resolve())
-    #     self.policy = jax.jit(policy_fn)
 
     
     def send_cmd(self, cmd:  LowCmd_):
@@ -209,13 +176,10 @@ class Controller:
             self.qj[i] = self.low_state.motor_state[joint2motor_idx[i]].q - default_pos[i]
             self.dqj[i] = self.low_state.motor_state[joint2motor_idx[i]].dq
 
-        # imu_state quaternion: w, x, y, z
+
         quat = self.low_state.imu_state.quaternion
         gyro = self.low_state.imu_state.gyroscope
-        # print(gyro)
-        # ang_vel = np.array(
-        #     self.low_state.imu_state.gyroscope, dtype=np.float32)
-
+ 
         # create observation
         gravity = get_gravity_orientation(quat)
         joint_angles = self.qj.copy()
@@ -232,21 +196,15 @@ class Controller:
             self.action,
             phase,
         ]).astype(np.float32)
-        # return obs.astype(np.float32)
 
         self.action = self.policy.get_control(obs)
         # print("Action: ", self.action)
         action_effect = self.action * action_scale
         # Create a mask to zero out action for the last 10 joints (arms) if config is set.
-        # Assuming mjx_model.nu is 23.
         arm_mask = np.ones_like(action_effect)
         arm_mask[-10:] = 0.0
-        masked_action_effect = np.where(
-            mask_arms, action_effect * arm_mask, action_effect
-        )
-        # print(masked_action_effect)
-        # print(f"default_pos_array type: {type(self.default_pos_array)}, shape: {self.default_pos_array.shape}")
-        # print(f"masked_action_effect type: {type(masked_action_effect)}, shape: {masked_action_effect.shape}")
+        masked_action_effect = action_effect * arm_mask
+        
         motor_targets_unclamped = self.default_pos_array  + masked_action_effect
 
         # Clamp motor targets to joint limits and check for clamping
@@ -259,11 +217,6 @@ class Controller:
             for idx in clamped_indices:
                 print(f"  Joint {idx}: {motor_targets_unclamped[idx]:.3f} -> {motor_targets[idx]:.3f} (limits: [{self._joint_lower_bounds[idx]:.3f}, {self._joint_upper_bounds[idx]:.3f}])")
 
-        # print("Ankle motor targets:")
-        # print(f"Left ankle pitch: {motor_targets[G1MjxJointIndex.LeftAnklePitch]:.3f}")
-
-        # transform action to target_dof_pos
-        # target_dof_pos = self.action
 
         # Build low cmd
         for i in range(G1_NUM_MOTOR):
@@ -277,8 +230,6 @@ class Controller:
         # send the command
         self.send_cmd(self.low_cmd)
 
-    #   self._last_action = onnx_pred.copy()
-        # data.ctrl[:] = onnx_pred * self._action_scale + self._default_angles
         phase_tp1 = self._phase + self._phase_dt
         self._phase = np.fmod(phase_tp1 + np.pi, 2 * np.pi) - np.pi
 
@@ -287,7 +238,7 @@ class Controller:
 
 if __name__ == "__main__":
     print("Setting up policy...")
-    policy = OnnxPolicy("./bh_policy.onnx")
+    policy = OnnxPolicy(ONNX_PATH)
     print("WARNING: Please ensure there are no obstacles around the robot while running this example.")
     # Initial prompt doesn't need non-blocking
     input("Press Enter to acknowledge warning and proceed...")
