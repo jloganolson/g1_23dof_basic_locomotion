@@ -22,7 +22,7 @@ import numpy as np
 import onnxruntime as rt
 from keyboard_reader import KeyboardController
 
-ONNX_PATH = "deploy/bh_policy.onnx"
+ONNX_PATH = "train/bh_policy.onnx"
 
 
 class OnnxController:

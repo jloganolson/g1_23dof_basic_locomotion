@@ -29,7 +29,7 @@ from keyboard_reader import KeyboardController
 import time
 
 NETWORK_CARD_NAME = 'enxc8a362b43bfd'
-ONNX_PATH = "deploy/bh_policy.onnx"
+ONNX_PATH = "train/bh_policy.onnx"
 
 class OnnxPolicy:
   """ONNX controller for the Go-1 robot."""

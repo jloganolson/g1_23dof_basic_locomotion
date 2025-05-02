@@ -16,8 +16,8 @@ Setup/pip install the following repos
 (https://github.com/google-deepmind/mujoco_playground)
 (https://github.com/google/brax)
 
-To train, run `python training/main.py` 
-To convert pkl to onnx, update the ckpt_path and run all the cells in `training/brax_network_to_onnx.ipynb`
+To train, run `python train/main.py` 
+To convert pkl to onnx, update the ckpt_path and run all the cells in `train/brax_network_to_onnx.ipynb`
 To test using sim2sim with mujoco, run `python deploy/deploy_sim.py` with updated ONNX_PATH string
 To deploy irl, setup your G1 and run `python deploy/deploy_real.py` with updated ONNX_PATH and NETWORK_CARD_NAME strings
 
